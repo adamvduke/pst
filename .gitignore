@@ -1,0 +1,7 @@
+# Built binaries
+/pst
+/cmd/pst/pst
+*.test
+*.out
+
+# Fuzzing crashers land in testdata/fuzz/; commit them deliberately as regressions.

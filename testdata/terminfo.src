@@ -1,0 +1,11 @@
+# Source for the compiled entries in testdata/terminfo. See testdata/README.
+pst-present|xterm-256color with Pst,
+	Pst=\E]7501;%p1%s\E\\, use=xterm-256color,
+pst-absent|xterm-256color without Pst,
+	use=xterm-256color,
+pst-cancelled|pst-present with Pst cancelled,
+	Pst@, use=pst-present,
+pst-plain|no extended capabilities,
+	cols#80, lines#24, bel=^G, cr=\r,
+pst-only|only Pst,
+	cols#80, bel=^G, Pst=\E]7501;%p1%s\E\\,

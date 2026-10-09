@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  no-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: go.mod must have no require lines
+        run: |
+          if grep -nE '^\s*require\b' go.mod; then
+            echo "pst must stay dependency-free" >&2
+            exit 1
+          fi
+          test ! -e go.sum
+
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        go: ["1.22", "stable"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go vet -tags manual ./...
+      - run: go test -race ./...
+
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [FuzzParseBody, FuzzParseSequence, FuzzRoundTrip, FuzzScanner, FuzzTerminfo, FuzzClassifier, FuzzOSC94Mapper]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go test -run '^$' -fuzz '^${{ matrix.target }}$' -fuzztime 30s .
+
+  cross-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [windows/amd64, freebsd/amd64, js/wasm, linux/arm64, netbsd/amd64, openbsd/amd64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: build ${{ matrix.target }}
+        run: |
+          export GOOS=${TARGET%/*} GOARCH=${TARGET#*/}
+          go build ./...
+          go vet ./...
+          go test -c -o /dev/null .
+        env:
+          TARGET: ${{ matrix.target }}

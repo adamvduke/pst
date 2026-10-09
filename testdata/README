@@ -1,0 +1,29 @@
+Compiled terminfo fixtures for terminfo_test.go
+===============================================
+
+terminfo/70/* are compiled terminfo entries, committed so that the tests do
+not need tic. They were generated on macOS 26 with ncurses 6.0.20150808 tic,
+whose xterm-256color entry the first three "use=". The source is
+terminfo.src.
+
+Legacy format (magic 0432, 16-bit numbers):
+
+    tic -x -o testdata/terminfo testdata/terminfo.src
+
+  pst-present    xterm-256color + Pst              extended section, Pst set
+  pst-absent     xterm-256color                    extended section, no Pst
+  pst-cancelled  pst-present with Pst@             extended section, Pst cancelled (-2)
+  pst-plain      a few standard capabilities       no extended section
+  pst-only       Pst and two standard capabilities extended section with one string
+
+Extended number format (magic 01036, 32-bit numbers). ncurses 6.0 tic cannot
+write it, so these were converted from the legacy files with gen32.go, which
+widens every number field and leaves everything else byte-for-byte the same:
+
+    for n in present absent cancelled plain; do
+      go run testdata/gen32.go testdata/terminfo/70/pst-$n testdata/terminfo/70/pst-$n-32
+    done
+
+tic writes into hexadecimal subdirectories (70 is "p") on macOS. The tests
+copy entries into a letter subdirectory (p/) at test time to cover that
+layout too.
